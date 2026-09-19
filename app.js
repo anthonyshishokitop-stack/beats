@@ -81,106 +81,125 @@ downloadBtn.addEventListener('click', () => {
 
 // ---------- Fixed generation ----------
 async function createInstrumental(style, bpm, durationSec) {
-  return await Tone.Offline(({ transport }) => {
+  return await Tone.Offline(async ({ transport }) => {
     transport.bpm.value = bpm;
 
-    // Instruments
+    // Create instruments
     const kick = new Tone.MembraneSynth({
-      pitchDecay: 0.05, octaves: 4,
-      oscillator: { type: 'sine' },
+      pitchDecay: 0.05,
+      octaves: 4,
+      oscillator: { type: "sine" },
       envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.1 }
     }).toDestination();
 
     const snare = new Tone.NoiseSynth({
-      noise: { type: 'white' },
+      noise: { type: "white" },
       envelope: { attack: 0.001, decay: 0.15, sustain: 0 }
     }).toDestination();
 
     const hihat = new Tone.MetalSynth({
       frequency: 400,
       envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
-      harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5
+      harmonicity: 5.1,
+      modulationIndex: 32,
+      resonance: 4000,
+      octaves: 1.5
     }).toDestination();
     hihat.volume.value = -18;
 
     const logDrum = new Tone.MembraneSynth({
-      pitchDecay: 0.08, octaves: 3,
-      oscillator: { type: 'triangle' },
+      pitchDecay: 0.08,
+      octaves: 3,
+      oscillator: { type: "triangle" },
       envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 0.3 }
     }).toDestination();
     logDrum.volume.value = -6;
 
     const keys = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'sine' },
+      oscillator: { type: "sine" },
       envelope: { attack: 0.02, decay: 0.4, sustain: 0.3, release: 0.8 }
     }).toDestination();
     keys.volume.value = -10;
 
     const bass = new Tone.MonoSynth({
-      oscillator: { type: 'sawtooth' },
+      oscillator: { type: "sawtooth" },
       envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.4 },
-      filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.3, baseFrequency: 100, octaves: 2.5 }
+      filterEnvelope: {
+        attack: 0.01,
+        decay: 0.2,
+        sustain: 0.3,
+        release: 0.3,
+        baseFrequency: 100,
+        octaves: 2.5
+      }
     }).toDestination();
     bass.volume.value = -8;
 
-    const totalBeats = Math.ceil((durationSec * bpm) / 60);
-    const steps = totalBeats * 4;
+    // Helper to schedule notes safely
+    const schedule = (instrument, note, duration, time) => {
+      instrument.triggerAttackRelease(note, duration, time);
+    };
 
-    for (let i = 0; i < steps; i++) {
-      const t = i * (60 / bpm) / 4;
-      const beatPos = i % 16;
+    const step = Tone.Time("16n").toSeconds();
+    const totalSteps = Math.floor(durationSec / step);
 
-      // Kick
-      if (style === 'gqom') {
-        if ([0, 3, 6, 10, 12].includes(beatPos)) kick.triggerAttackRelease('C1', '8n', t);
-      } else if (style === 'amapiano' || style === 'afrohouse') {
-        if (beatPos % 4 === 0) kick.triggerAttackRelease('C1', '8n', t);
+    for (let i = 0; i < totalSteps; i++) {
+      const t = i * step;
+      const pos = i % 16;
+
+      // === KICK ===
+      if (style === "gqom") {
+        if ([0, 3, 6, 10, 12].includes(pos)) schedule(kick, "C1", "8n", t);
+      } else if (style === "amapiano" || style === "afrohouse") {
+        if (pos % 4 === 0) schedule(kick, "C1", "8n", t);
       } else {
-        if (beatPos === 0 || beatPos === 8) kick.triggerAttackRelease('C1', '8n', t);
+        if (pos === 0 || pos === 8) schedule(kick, "C1", "8n", t);
       }
 
-      // Snare
-      if (beatPos === 4 || beatPos === 12) snare.triggerAttackRelease('8n', t);
-
-      // Hi-hat
-      if (style === 'amapiano' || style === 'afrohouse') {
-        if (i % 2 === 0) hihat.triggerAttackRelease('32n', t, 0.3);
-      } else if (i % 4 === 2) {
-        hihat.triggerAttackRelease('16n', t, 0.2);
+      // === SNARE ===
+      if (pos === 4 || pos === 12) {
+        schedule(snare, "8n", "8n", t + 0.01);
       }
 
-      // Log drum (Amapiano)
-      if (style === 'amapiano' && [0, 6, 10, 14].includes(beatPos)) {
-        const note = beatPos === 0 || beatPos === 10 ? 'C2' : 'G1';
-        logDrum.triggerAttackRelease(note, '8n', t);
+      // === HI-HAT ===
+      if (style === "amapiano" || style === "afrohouse") {
+        if (i % 2 === 0) schedule(hihat, "32n", "32n", t + 0.02);
+      } else if (pos === 2 || pos === 6 || pos === 10 || pos === 14) {
+        schedule(hihat, "16n", "16n", t + 0.02);
       }
 
-      // Bass
-      if (style !== 'amapiano' && (beatPos === 0 || beatPos === 8)) {
-        bass.triggerAttackRelease('C2', '4n', t);
-      }
-      if (style === 'kwaito' && beatPos === 4) {
-        bass.triggerAttackRelease('G1', '8n', t);
+      // === LOG DRUM (Amapiano) ===
+      if (style === "amapiano") {
+        if (pos === 0) schedule(logDrum, "C2", "8n", t + 0.03);
+        if (pos === 6) schedule(logDrum, "G1", "8n", t + 0.03);
+        if (pos === 10) schedule(logDrum, "C2", "8n", t + 0.03);
+        if (pos === 14) schedule(logDrum, "G1", "8n", t + 0.03);
       }
 
-      // Chords
-      if (beatPos === 0) {
-        const chords = {
-          amapiano:   [['C3','E3','G3','B3'], ['A2','C3','E3','G3']],
-          kwaito:     [['C3','Eb3','G3'], ['F2','Ab2','C3']],
-          gqom:       [['C3','Eb3','G3'], ['Bb2','D3','F3']],
-          maskandi:   [['C3','E3','G3'], ['G2','B2','D3']],
-          afrohouse:  [['C3','E3','G3','B3'], ['F2','A2','C3','E3']],
-          traditional:[['C3','E3','G3'], ['F2','A2','C3']]
+      // === BASS ===
+      if (style !== "amapiano") {
+        if (pos === 0 || pos === 8) schedule(bass, "C2", "4n", t + 0.04);
+        if (style === "kwaito" && pos === 4) schedule(bass, "G1", "8n", t + 0.04);
+      }
+
+      // === CHORDS (once per bar) ===
+      if (pos === 0) {
+        const chordProgressions = {
+          amapiano:   [["C3", "E3", "G3", "B3"], ["A2", "C3", "E3", "G3"]],
+          kwaito:     [["C3", "Eb3", "G3"], ["F2", "Ab2", "C3"]],
+          gqom:       [["C3", "Eb3", "G3"], ["Bb2", "D3", "F3"]],
+          maskandi:   [["C3", "E3", "G3"], ["G2", "B2", "D3"]],
+          afrohouse:  [["C3", "E3", "G3", "B3"], ["F2", "A2", "C3", "E3"]],
+          traditional:[["C3", "E3", "G3"], ["F2", "A2", "C3"]]
         };
-        const prog = chords[style] || chords.amapiano;
+
+        const prog = chordProgressions[style] || chordProgressions.amapiano;
         const chord = prog[Math.floor(i / 16) % prog.length];
-        keys.triggerAttackRelease(chord, '2n', t, 0.6);
+        keys.triggerAttackRelease(chord, "2n", t + 0.05, 0.6);
       }
     }
   }, durationSec);
 }
-
 function playBuffer(buffer) {
   stopPlayback();
   const player = new Tone.Player(buffer).toDestination();
