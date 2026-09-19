@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SA Instrumental AI — South African Music Generator</title>
+  <meta name="description" content="Generate authentic South African instrumental music (Amapiano, Kwaito, Gqom, Maskandi) from a prompt. Pure client-side." />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+<body>
+  <div class="bg-pattern"></div>
+
+  <header>
+    <div class="logo">
+      <span class="flag">🇿🇦</span>
+      <h1>SA Instrumental AI</h1>
+    </div>
+    <p class="tagline">Generate authentic South African instrumentals from your prompt</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <div class="style-select">
+        <label>Music Style</label>
+        <select id="style">
+          <option value="amapiano">Amapiano (Log Drum + Piano)</option>
+          <option value="kwaito">Kwaito</option>
+          <option value="gqom">Gqom</option>
+          <option value="maskandi">Maskandi</option>
+          <option value="afrohouse">Afro House</option>
+          <option value="traditional">Traditional / Marabi</option>
+        </select>
+      </div>
+
+      <div class="prompt-box">
+        <label>Your Prompt</label>
+        <textarea id="prompt" rows="3" placeholder="Example: chill late-night Amapiano with deep log drums, jazzy Rhodes, soft shakers, 112 BPM, Johannesburg sunset vibe..."></textarea>
+      </div>
+
+      <div class="options">
+        <div>
+          <label>Duration</label>
+          <select id="duration">
+            <option value="16">16 seconds</option>
+            <option value="24" selected>24 seconds</option>
+            <option value="32">32 seconds</option>
+          </select>
+        </div>
+        <div>
+          <label>BPM</label>
+          <input type="number" id="bpm" value="112" min="90" max="130" />
+        </div>
+      </div>
+
+      <button id="generateBtn" class="btn primary">
+        <span class="btn-text">Generate Instrumental</span>
+        <span class="spinner hidden"></span>
+      </button>
+    </section>
+
+    <section class="result hidden" id="result">
+      <div class="player">
+        <h2 id="trackTitle">Your SA Instrumental</h2>
+        <p id="optimizedPrompt" class="optimized"></p>
+        <div class="transport">
+          <button id="playBtn" class="btn">▶ Play</button>
+          <button id="stopBtn" class="btn">■ Stop</button>
+          <button id="downloadBtn" class="btn">↓ Download WAV</button>
+        </div>
+        <div class="visualizer" id="visualizer"></div>
+      </div>
+    </section>
+
+    <section class="examples">
+      <h3>Quick Style Prompts (click to use)</h3>
+      <div class="chips">
+        <button class="chip" data-prompt="Deep log drum Amapiano, warm Rhodes piano chords, soft shakers, hypnotic groove, late night Soweto club, 112 BPM">Classic Amapiano</button>
+        <button class="chip" data-prompt="Old school Kwaito, heavy bass, simple loop, township energy, 100 BPM">Classic Kwaito</button>
+        <button class="chip" data-prompt="Dark Gqom, broken beats, industrial percussion, Durban underground vibe, 125 BPM">Gqom</button>
+        <button class="chip" data-prompt="Maskandi acoustic guitar, traditional Zulu rhythm, concertina feel, rural KwaZulu-Natal">Maskandi</button>
+        <button class="chip" data-prompt="Afro House, deep four-on-the-floor, soulful keys, African percussion, Cape Town sunset">Afro House</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built for pure static hosting on GitHub Pages • All generation happens in your browser</p>
+    <p class="note">This is algorithmic synthesis inspired by South African styles (Tone.js). For studio-quality AI music use tools like Suno with the optimized prompt shown above.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
