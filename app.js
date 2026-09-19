@@ -1,33 +1,33 @@
-// SA Instrumental AI — fixed version (works on GitHub Pages)
-
 let currentPlayer = null;
 let isPlaying = false;
 let offlineBuffer = null;
 
 const stylePresets = {
-  amapiano: { name: "Amapiano", bpmDefault: 112, description: "deep log drum bass, warm Rhodes piano, soft shakers, hypnotic groove" },
-  kwaito:   { name: "Kwaito",   bpmDefault: 100, description: "heavy kick, simple bass loop, township energy, laid-back swing" },
-  gqom:     { name: "Gqom",     bpmDefault: 125, description: "broken beats, industrial percussion, dark atmosphere, Durban energy" },
-  maskandi: { name: "Maskandi", bpmDefault: 95,  description: "acoustic guitar patterns, traditional Zulu rhythm, concertina-like melody" },
-  afrohouse:{ name: "Afro House",bpmDefault: 120, description: "deep four-on-the-floor, soulful keys, African percussion layers" },
+  amapiano:   { name: "Amapiano", bpmDefault: 112, description: "deep log drum bass, warm Rhodes piano, soft shakers, hypnotic groove" },
+  kwaito:     { name: "Kwaito",   bpmDefault: 100, description: "heavy kick, simple bass loop, township energy, laid-back swing" },
+  gqom:       { name: "Gqom",     bpmDefault: 125, description: "broken beats, industrial percussion, dark atmosphere, Durban energy" },
+  maskandi:   { name: "Maskandi", bpmDefault: 95,  description: "acoustic guitar patterns, traditional Zulu rhythm, concertina-like melody" },
+  afrohouse:  { name: "Afro House", bpmDefault: 120, description: "deep four-on-the-floor, soulful keys, African percussion layers" },
   traditional:{ name: "Traditional / Marabi", bpmDefault: 90, description: "piano-driven marabi feel, warm chords, gentle swing" }
 };
 
-const styleSelect   = document.getElementById('style');
-const promptEl      = document.getElementById('prompt');
-const bpmInput      = document.getElementById('bpm');
-const durationSelect= document.getElementById('duration');
-const generateBtn   = document.getElementById('generateBtn');
-const resultSection = document.getElementById('result');
-const trackTitle    = document.getElementById('trackTitle');
-const optimizedPrompt = document.getElementById('optimizedPrompt');
-const playBtn       = document.getElementById('playBtn');
-const stopBtn       = document.getElementById('stopBtn');
-const downloadBtn   = document.getElementById('downloadBtn');
-const visualizer    = document.getElementById('visualizer');
+const styleSelect    = document.getElementById('style');
+const promptEl       = document.getElementById('prompt');
+const bpmInput       = document.getElementById('bpm');
+const durationSelect = document.getElementById('duration');
+const generateBtn    = document.getElementById('generateBtn');
+const resultSection  = document.getElementById('result');
+const trackTitle     = document.getElementById('trackTitle');
+const optimizedPrompt= document.getElementById('optimizedPrompt');
+const playBtn        = document.getElementById('playBtn');
+const stopBtn        = document.getElementById('stopBtn');
+const downloadBtn    = document.getElementById('downloadBtn');
+const visualizer     = document.getElementById('visualizer');
 
 document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', () => promptEl.value = chip.dataset.prompt);
+  chip.addEventListener('click', () => {
+    promptEl.value = chip.dataset.prompt;
+  });
 });
 
 styleSelect.addEventListener('change', () => {
@@ -40,7 +40,7 @@ generateBtn.addEventListener('click', async () => {
   const style = styleSelect.value;
   const userPrompt = promptEl.value.trim() || stylePresets[style].description;
   const bpm = parseInt(bpmInput.value) || stylePresets[style].bpmDefault;
-  const durationSec = parseInt(durationSelect.value) || 24;
+  const durationSec = parseInt(durationSelect.value) || 16;
 
   generateBtn.disabled = true;
   generateBtn.querySelector('.btn-text').textContent = 'Generating...';
@@ -59,7 +59,7 @@ generateBtn.addEventListener('click', async () => {
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {
     console.error(err);
-    alert('Generation failed: ' + err.message);
+    alert('Generation failed: ' + (err.message || err));
   } finally {
     generateBtn.disabled = false;
     generateBtn.querySelector('.btn-text').textContent = 'Generate Instrumental';
@@ -79,127 +79,117 @@ downloadBtn.addEventListener('click', () => {
   downloadWav(offlineBuffer, `SA-${styleSelect.value}-${Date.now()}.wav`);
 });
 
-// ---------- Fixed generation ----------
+// ---------- Reliable generation ----------
 async function createInstrumental(style, bpm, durationSec) {
-  return await Tone.Offline(async ({ transport }) => {
+  const buffer = await Tone.Offline(({ transport }) => {
     transport.bpm.value = bpm;
 
-    // Create instruments
+    // Simple instruments only
     const kick = new Tone.MembraneSynth({
       pitchDecay: 0.05,
-      octaves: 4,
+      octaves: 5,
       oscillator: { type: "sine" },
-      envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.1 }
+      envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.1 }
     }).toDestination();
+    kick.volume.value = -4;
 
     const snare = new Tone.NoiseSynth({
       noise: { type: "white" },
-      envelope: { attack: 0.001, decay: 0.15, sustain: 0 }
+      envelope: { attack: 0.001, decay: 0.18, sustain: 0 }
     }).toDestination();
+    snare.volume.value = -10;
 
-    const hihat = new Tone.MetalSynth({
-      frequency: 400,
-      envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
-      harmonicity: 5.1,
-      modulationIndex: 32,
-      resonance: 4000,
-      octaves: 1.5
+    const hat = new Tone.MetalSynth({
+      frequency: 350,
+      envelope: { attack: 0.001, decay: 0.06, release: 0.01 },
+      harmonicity: 4.5,
+      modulationIndex: 20,
+      resonance: 3000,
+      octaves: 1.2
     }).toDestination();
-    hihat.volume.value = -18;
+    hat.volume.value = -20;
 
-    const logDrum = new Tone.MembraneSynth({
-      pitchDecay: 0.08,
+    const bass = new Tone.MembraneSynth({
+      pitchDecay: 0.1,
       octaves: 3,
       oscillator: { type: "triangle" },
-      envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 0.3 }
+      envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: 0.4 }
     }).toDestination();
-    logDrum.volume.value = -6;
+    bass.volume.value = -6;
 
     const keys = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "sine" },
-      envelope: { attack: 0.02, decay: 0.4, sustain: 0.3, release: 0.8 }
+      envelope: { attack: 0.03, decay: 0.5, sustain: 0.25, release: 1 }
     }).toDestination();
-    keys.volume.value = -10;
+    keys.volume.value = -12;
 
-    const bass = new Tone.MonoSynth({
-      oscillator: { type: "sawtooth" },
-      envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.4 },
-      filterEnvelope: {
-        attack: 0.01,
-        decay: 0.2,
-        sustain: 0.3,
-        release: 0.3,
-        baseFrequency: 100,
-        octaves: 2.5
-      }
-    }).toDestination();
-    bass.volume.value = -8;
+    // Time helpers
+    const t16 = Tone.Time("16n").toSeconds();
+    const bars = Math.ceil((durationSec * bpm) / (60 * 4)); // 4 beats per bar
+    const total16ths = bars * 16;
 
-    // Helper to schedule notes safely
-    const schedule = (instrument, note, duration, time) => {
-      instrument.triggerAttackRelease(note, duration, time);
+    // Chord progressions
+    const chords = {
+      amapiano:   [["C3","E3","G3","B3"], ["A2","C3","E3","G3"], ["F2","A2","C3","E3"], ["G2","B2","D3","F3"]],
+      kwaito:     [["C3","Eb3","G3"], ["F2","Ab2","C3"], ["Bb2","D3","F3"], ["G2","Bb2","D3"]],
+      gqom:       [["C3","Eb3","G3"], ["Bb2","D3","F3"], ["Ab2","C3","Eb3"], ["G2","Bb2","D3"]],
+      maskandi:   [["C3","E3","G3"], ["G2","B2","D3"], ["A2","C3","E3"], ["F2","A2","C3"]],
+      afrohouse:  [["C3","E3","G3","B3"], ["F2","A2","C3","E3"], ["G2","B2","D3","F3"], ["A2","C3","E3","G3"]],
+      traditional:[["C3","E3","G3"], ["F2","A2","C3"], ["G2","B2","D3"], ["A2","C3","E3"]]
     };
+    const prog = chords[style] || chords.amapiano;
 
-    const step = Tone.Time("16n").toSeconds();
-    const totalSteps = Math.floor(durationSec / step);
+    for (let i = 0; i < total16ths; i++) {
+      const time = i * t16;
+      const pos = i % 16;          // position inside the bar
+      const bar = Math.floor(i / 16);
 
-    for (let i = 0; i < totalSteps; i++) {
-      const t = i * step;
-      const pos = i % 16;
-
-      // === KICK ===
+      // Kick
       if (style === "gqom") {
-        if ([0, 3, 6, 10, 12].includes(pos)) schedule(kick, "C1", "8n", t);
+        if ([0, 3, 6, 10, 12].includes(pos)) kick.triggerAttackRelease("C1", "8n", time);
       } else if (style === "amapiano" || style === "afrohouse") {
-        if (pos % 4 === 0) schedule(kick, "C1", "8n", t);
+        if (pos % 4 === 0) kick.triggerAttackRelease("C1", "8n", time);
       } else {
-        if (pos === 0 || pos === 8) schedule(kick, "C1", "8n", t);
+        if (pos === 0 || pos === 8) kick.triggerAttackRelease("C1", "8n", time);
       }
 
-      // === SNARE ===
+      // Snare / clap
       if (pos === 4 || pos === 12) {
-        schedule(snare, "8n", "8n", t + 0.01);
+        snare.triggerAttackRelease("8n", time + 0.01);
       }
 
-      // === HI-HAT ===
+      // Hi-hat
       if (style === "amapiano" || style === "afrohouse") {
-        if (i % 2 === 0) schedule(hihat, "32n", "32n", t + 0.02);
+        if (i % 2 === 0) hat.triggerAttackRelease("32n", time + 0.015, 0.25);
       } else if (pos === 2 || pos === 6 || pos === 10 || pos === 14) {
-        schedule(hihat, "16n", "16n", t + 0.02);
+        hat.triggerAttackRelease("16n", time + 0.015, 0.2);
       }
 
-      // === LOG DRUM (Amapiano) ===
+      // Log-drum style bass (Amapiano)
       if (style === "amapiano") {
-        if (pos === 0) schedule(logDrum, "C2", "8n", t + 0.03);
-        if (pos === 6) schedule(logDrum, "G1", "8n", t + 0.03);
-        if (pos === 10) schedule(logDrum, "C2", "8n", t + 0.03);
-        if (pos === 14) schedule(logDrum, "G1", "8n", t + 0.03);
+        if (pos === 0)  bass.triggerAttackRelease("C2", "8n", time + 0.02);
+        if (pos === 6)  bass.triggerAttackRelease("G1", "8n", time + 0.02);
+        if (pos === 10) bass.triggerAttackRelease("C2", "8n", time + 0.02);
+        if (pos === 14) bass.triggerAttackRelease("G1", "8n", time + 0.02);
       }
 
-      // === BASS ===
+      // Simple bass for other styles
       if (style !== "amapiano") {
-        if (pos === 0 || pos === 8) schedule(bass, "C2", "4n", t + 0.04);
-        if (style === "kwaito" && pos === 4) schedule(bass, "G1", "8n", t + 0.04);
+        if (pos === 0 || pos === 8) bass.triggerAttackRelease("C2", "4n", time + 0.02);
+        if (style === "kwaito" && pos === 4) bass.triggerAttackRelease("G1", "8n", time + 0.02);
       }
 
-      // === CHORDS (once per bar) ===
+      // Chords – once per bar
       if (pos === 0) {
-        const chordProgressions = {
-          amapiano:   [["C3", "E3", "G3", "B3"], ["A2", "C3", "E3", "G3"]],
-          kwaito:     [["C3", "Eb3", "G3"], ["F2", "Ab2", "C3"]],
-          gqom:       [["C3", "Eb3", "G3"], ["Bb2", "D3", "F3"]],
-          maskandi:   [["C3", "E3", "G3"], ["G2", "B2", "D3"]],
-          afrohouse:  [["C3", "E3", "G3", "B3"], ["F2", "A2", "C3", "E3"]],
-          traditional:[["C3", "E3", "G3"], ["F2", "A2", "C3"]]
-        };
-
-        const prog = chordProgressions[style] || chordProgressions.amapiano;
-        const chord = prog[Math.floor(i / 16) % prog.length];
-        keys.triggerAttackRelease(chord, "2n", t + 0.05, 0.6);
+        const chord = prog[bar % prog.length];
+        keys.triggerAttackRelease(chord, "2n", time + 0.03, 0.55);
       }
     }
   }, durationSec);
+
+  return buffer;
 }
+
 function playBuffer(buffer) {
   stopPlayback();
   const player = new Tone.Player(buffer).toDestination();
@@ -207,12 +197,15 @@ function playBuffer(buffer) {
   currentPlayer = player;
   isPlaying = true;
   startVisualizer();
-  player.onstop = () => { isPlaying = false; stopVisualizer(); };
+  player.onstop = () => {
+    isPlaying = false;
+    stopVisualizer();
+  };
 }
 
 function stopPlayback() {
   if (currentPlayer) {
-    currentPlayer.stop();
+    try { currentPlayer.stop(); } catch(e) {}
     currentPlayer.dispose();
     currentPlayer = null;
   }
@@ -221,55 +214,59 @@ function stopPlayback() {
 }
 
 function startVisualizer() {
-  visualizer.innerHTML = '';
+  visualizer.innerHTML = "";
   for (let i = 0; i < 32; i++) {
-    const bar = document.createElement('span');
-    bar.style.height = '10%';
+    const bar = document.createElement("span");
+    bar.style.height = "10%";
     visualizer.appendChild(bar);
   }
-  const bars = visualizer.querySelectorAll('span');
+  const bars = visualizer.querySelectorAll("span");
   visualizer._interval = setInterval(() => {
     if (!isPlaying) return;
-    bars.forEach(b => b.style.height = (12 + Math.random() * 75) + '%');
+    bars.forEach(b => b.style.height = (10 + Math.random() * 75) + "%");
   }, 90);
 }
 
 function stopVisualizer() {
   if (visualizer._interval) clearInterval(visualizer._interval);
-  visualizer.querySelectorAll('span').forEach(b => b.style.height = '8%');
+  visualizer.querySelectorAll("span").forEach(b => b.style.height = "8%");
 }
 
 function downloadWav(toneBuffer, filename) {
   const audioBuffer = toneBuffer.get ? toneBuffer.get() : toneBuffer;
-  const numOfChan = audioBuffer.numberOfChannels;
-  const length = audioBuffer.length * numOfChan * 2 + 44;
-  const buffer = new ArrayBuffer(length);
-  const view = new DataView(buffer);
+  const numChannels = audioBuffer.numberOfChannels;
+  const length = audioBuffer.length * numChannels * 2 + 44;
+  const arrayBuffer = new ArrayBuffer(length);
+  const view = new DataView(arrayBuffer);
   const channels = [];
-  let offset = 0, pos = 0;
+  let offset = 0;
+  let pos = 0;
 
-  function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
-  function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+  function writeUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+  function writeUint32(data) { view.setUint32(pos, data, true); pos += 4; }
 
-  setUint32(0x46464952); // RIFF
-  setUint32(length - 8);
-  setUint32(0x45564157); // WAVE
-  setUint32(0x20746d66); // fmt
-  setUint32(16);
-  setUint16(1);
-  setUint16(numOfChan);
-  setUint32(audioBuffer.sampleRate);
-  setUint32(audioBuffer.sampleRate * 2 * numOfChan);
-  setUint16(numOfChan * 2);
-  setUint16(16);
-  setUint32(0x61746164); // data
-  setUint32(length - 44);
+  // WAV header
+  writeUint32(0x46464952); // "RIFF"
+  writeUint32(length - 8);
+  writeUint32(0x45564157); // "WAVE"
+  writeUint32(0x20746d66); // "fmt "
+  writeUint32(16);
+  writeUint16(1); // PCM
+  writeUint16(numChannels);
+  writeUint32(audioBuffer.sampleRate);
+  writeUint32(audioBuffer.sampleRate * 2 * numChannels);
+  writeUint16(numChannels * 2);
+  writeUint16(16);
+  writeUint32(0x61746164); // "data"
+  writeUint32(length - 44);
 
-  for (let i = 0; i < numOfChan; i++) channels.push(audioBuffer.getChannelData(i));
+  for (let i = 0; i < numChannels; i++) {
+    channels.push(audioBuffer.getChannelData(i));
+  }
 
   while (pos < audioBuffer.length) {
-    for (let i = 0; i < numOfChan; i++) {
-      let sample = Math.max(-1, Math.min(1, channels[i][pos]));
+    for (let ch = 0; ch < numChannels; ch++) {
+      let sample = Math.max(-1, Math.min(1, channels[ch][pos]));
       sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
       view.setInt16(44 + offset, sample, true);
       offset += 2;
@@ -277,9 +274,9 @@ function downloadWav(toneBuffer, filename) {
     pos++;
   }
 
-  const blob = new Blob([buffer], { type: 'audio/wav' });
+  const blob = new Blob([arrayBuffer], { type: "audio/wav" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   a.click();
